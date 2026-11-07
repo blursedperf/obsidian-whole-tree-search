@@ -1,0 +1,102 @@
+import * as assert from "assert";
+import {
+	extractWholeTreeBlock,
+	getIndentationLevel,
+	searchContentForWholeTree,
+} from "../src/parser";
+
+// Test 1: Indentation level tracking with spaces and tabs
+assert.strictEqual(getIndentationLevel("- Root item"), 0);
+assert.strictEqual(getIndentationLevel("  - Two spaces"), 2);
+assert.strictEqual(getIndentationLevel("    - Four spaces"), 4);
+assert.strictEqual(getIndentationLevel("\t- One tab"), 4);
+assert.strictEqual(getIndentationLevel("\t\t- Two tabs"), 8);
+
+// Test 2: Extracting Parent + Match + Children with space indentation
+const sampleMarkdown = [
+	"- Project Alpha",
+	"  - **Milestone 1**: Architecture & Design",
+	"    - Define database schema",
+	"      - Users table",
+	"      - Sessions table",
+	"    - Draft API specification",
+	"  - **Milestone 2**: Implementation",
+	"    - Build authentication service",
+	"",
+	"- Unrelated Root Note",
+].join("\n");
+
+const lines = sampleMarkdown.split("\n");
+
+// Match on "Milestone 1" (line index 1):
+// Should include Parent ("- Project Alpha"), Match ("  - **Milestone 1**..."),
+// and all nested children (lines 2, 3, 4, 5), stopping before "  - **Milestone 2**" (equal indent).
+const milestoneBlock = extractWholeTreeBlock(lines, 1);
+assert.strictEqual(
+	milestoneBlock,
+	[
+		"- Project Alpha",
+		"  - **Milestone 1**: Architecture & Design",
+		"    - Define database schema",
+		"      - Users table",
+		"      - Sessions table",
+		"    - Draft API specification",
+	].join("\n")
+);
+
+// Match on "Define database schema" (line index 2):
+// Immediate parent is line 1 ("  - **Milestone 1**..."), children are lines 3 & 4 ("      - Users table", "      - Sessions table"),
+// stops at line 5 ("    - Draft API specification") because it has equal indentation.
+const schemaBlock = extractWholeTreeBlock(lines, 2);
+assert.strictEqual(
+	schemaBlock,
+	[
+		"  - **Milestone 1**: Architecture & Design",
+		"    - Define database schema",
+		"      - Users table",
+		"      - Sessions table",
+	].join("\n")
+);
+
+// Match on "Milestone 2" (line index 6):
+// Should stop at empty line (line index 8)
+const milestone2Block = extractWholeTreeBlock(lines, 6);
+assert.strictEqual(
+	milestone2Block,
+	[
+		"- Project Alpha",
+		"  - **Milestone 2**: Implementation",
+		"    - Build authentication service",
+	].join("\n")
+);
+
+// Test 3: Tab indentation support
+const tabMarkdown = [
+	"- Root Topic",
+	"\t- Subtopic ==highlighted==",
+	"\t\t- Child detail 1",
+	"\t\t- Child detail 2",
+	"\t- Sibling subtopic",
+].join("\n");
+
+const tabResults = searchContentForWholeTree(tabMarkdown, "highlighted", "notes.md", "notes");
+assert.strictEqual(tabResults.length, 1);
+assert.strictEqual(tabResults[0].matchedLineIndex, 1);
+assert.strictEqual(
+	tabResults[0].block,
+	[
+		"- Root Topic",
+		"\t- Subtopic ==highlighted==",
+		"\t\t- Child detail 1",
+		"\t\t- Child detail 2",
+	].join("\n")
+);
+
+// Test 4: Edge cases & Bounds safety
+assert.strictEqual(extractWholeTreeBlock([], 0), "");
+assert.strictEqual(extractWholeTreeBlock(["- single line"], -1), "");
+assert.strictEqual(extractWholeTreeBlock(["- single line"], 5), "");
+assert.strictEqual(searchContentForWholeTree("", "test").length, 0);
+assert.strictEqual(searchContentForWholeTree("line 1\nline 2", "   ").length, 0);
+
+console.log("All Whole-Tree Search tests passed!");

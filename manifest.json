@@ -1,0 +1,10 @@
+{
+	"id": "whole-tree-search",
+	"name": "Whole-Tree Search",
+	"version": "1.0.0",
+	"minAppVersion": "1.5.0",
+	"description": "Search markdown files while preserving hierarchical context: displays the matched line, its immediate parent, and all nested children based on indentation.",
+	"author": "blursedperf",
+	"authorUrl": "https://github.com/blursedperf",
+	"isDesktopOnly": false
+}
