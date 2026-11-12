@@ -33,7 +33,7 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 	}
 
 	override onOpen(): void {
-		super.onOpen();
+		void super.onOpen();
 		this.renderComponent.load();
 	}
 
@@ -144,7 +144,7 @@ export default class WholeTreeSearchPlugin extends Plugin {
 	async onload(): Promise<void> {
 		this.addCommand({
 			id: "open",
-			name: "Open whole-tree search",
+			name: "Open search",
 			callback: () => {
 				new WholeTreeSearchModal(this.app).open();
 			},

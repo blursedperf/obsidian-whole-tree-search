@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-whole-tree-search",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Search markdown files while preserving hierarchical context: displays the matched line, its immediate parent, and all nested children based on indentation.",
 	"main": "main.js",
 	"scripts": {
@@ -28,7 +28,6 @@
 	"homepage": "https://github.com/blursedperf/obsidian-whole-tree-search#readme",
 	"devDependencies": {
 		"@types/node": "^20.11.0",
-		"builtin-modules": "^3.3.0",
 		"esbuild": "0.21.5",
 		"obsidian": "^1.5.7",
 		"tslib": "2.6.2",
