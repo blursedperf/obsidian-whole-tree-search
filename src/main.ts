@@ -7,27 +7,33 @@ import {
 	SuggestModal,
 	TFile,
 } from "obsidian";
+import { searchContentForWholeTree, WholeTreeMatch } from "./parser";
 import {
-	extractWholeTreeBlock,
-	WholeTreeMatch,
-} from "./parser";
+	DEFAULT_SETTINGS,
+	isPathExcluded,
+	WholeTreeSearchSettings,
+	WholeTreeSearchSettingTab,
+} from "./settings";
 
 export interface VaultTreeSuggestion extends WholeTreeMatch {
 	file: TFile;
 }
 
 export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
-	private maxResults = 50;
 	private currentQuery = "";
 	private renderComponent: Component = new Component();
+	private settings: WholeTreeSearchSettings;
 
-	constructor(app: App) {
+	constructor(app: App, settings: WholeTreeSearchSettings) {
 		super(app);
+		this.settings = settings;
+		this.limit = settings.maxResults;
 		this.setPlaceholder("Type to search hierarchical list blocks across your vault...");
+		const newTab = settings.openInNewTabByDefault;
 		this.setInstructions([
 			{ command: "↑↓", purpose: "to navigate" },
-			{ command: "↵", purpose: "to jump to line" },
-			{ command: "mod ↵", purpose: "to open in new tab" },
+			{ command: "↵", purpose: newTab ? "to open in new tab" : "to jump to line" },
+			{ command: "mod ↵", purpose: newTab ? "to jump to line" : "to open in new tab" },
 			{ command: "esc", purpose: "to dismiss" },
 		]);
 	}
@@ -50,12 +56,15 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 		this.renderComponent = new Component();
 		this.renderComponent.load();
 
-		const normalizedQuery = query.trim().toLowerCase();
-		if (!normalizedQuery) {
+		const settings = this.settings;
+		const trimmedQuery = query.trim();
+		if (trimmedQuery.length < Math.max(1, settings.minQueryLength)) {
 			return [];
 		}
 
-		const files = this.app.vault.getMarkdownFiles();
+		const files = this.app.vault
+			.getMarkdownFiles()
+			.filter((file) => !isPathExcluded(file.path, settings.excludedFolders));
 		const suggestions: VaultTreeSuggestion[] = [];
 
 		for (const file of files) {
@@ -63,7 +72,8 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 			if (this.currentQuery !== query) {
 				return [];
 			}
-			if (suggestions.length >= this.maxResults) {
+			const remaining = settings.maxResults - suggestions.length;
+			if (remaining <= 0) {
 				break;
 			}
 
@@ -72,29 +82,18 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 				return [];
 			}
 
-			if (!content.toLowerCase().includes(normalizedQuery)) {
-				continue;
-			}
-
-			const lines = content.split(/\r?\n/);
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i];
-				if (line.trim() === "") continue;
-
-				if (line.toLowerCase().includes(normalizedQuery)) {
-					const block = extractWholeTreeBlock(lines, i);
-					suggestions.push({
-						file,
-						filePath: file.path,
-						fileName: file.basename,
-						matchedLineIndex: i,
-						block,
-					});
-
-					if (suggestions.length >= this.maxResults) {
-						break;
-					}
-				}
+			const matches = searchContentForWholeTree(content, trimmedQuery, file.path, file.basename, {
+				caseSensitive: settings.caseSensitive,
+				skipFrontmatter: settings.skipFrontmatter,
+				ancestorLevels: settings.ancestorLevels,
+				includeChildren: settings.includeChildren,
+				maxChildDepth: settings.maxChildDepth,
+				stopAtBlankLines: settings.stopAtBlankLines,
+				tabSize: settings.tabSize,
+				limit: remaining,
+			});
+			for (const match of matches) {
+				suggestions.push({ ...match, file });
 			}
 		}
 
@@ -132,7 +131,9 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 		suggestion: VaultTreeSuggestion,
 		evt: MouseEvent | KeyboardEvent
 	): void {
-		const openInNewLeaf = Keymap.isModEvent(evt);
+		const openInNewLeaf = Keymap.isModEvent(evt)
+			? !this.settings.openInNewTabByDefault
+			: this.settings.openInNewTabByDefault;
 		const leaf = this.app.workspace.getLeaf(openInNewLeaf);
 		void leaf.openFile(suggestion.file, {
 			eState: { line: suggestion.matchedLineIndex },
@@ -141,14 +142,28 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 }
 
 export default class WholeTreeSearchPlugin extends Plugin {
+	settings: WholeTreeSearchSettings = { ...DEFAULT_SETTINGS };
+
 	async onload(): Promise<void> {
+		await this.loadSettings();
+		this.addSettingTab(new WholeTreeSearchSettingTab(this.app, this));
+
 		this.addCommand({
 			id: "open",
 			name: "Open search",
 			callback: () => {
-				new WholeTreeSearchModal(this.app).open();
+				new WholeTreeSearchModal(this.app, this.settings).open();
 			},
 		});
+	}
+
+	async loadSettings(): Promise<void> {
+		const data = (await this.loadData()) as Partial<WholeTreeSearchSettings> | null;
+		this.settings = { ...DEFAULT_SETTINGS, ...(data ?? {}) };
+	}
+
+	async saveSettings(): Promise<void> {
+		await this.saveData(this.settings);
 	}
 
 	onunload(): void {}

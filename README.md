@@ -1,6 +1,6 @@
 # Whole-Tree Search for Obsidian
 
-A fast, lightweight Obsidian search plugin that extracts and renders hierarchical Markdown list blocks—displaying the **matched line**, its **immediate parent**, and all **nested children** based on outline indentation.
+A fast, lightweight Obsidian search plugin that extracts and renders hierarchical Markdown list blocks—displaying the **matched line**, its **parent(s)**, and all **nested children** based on outline indentation.
 
 ---
 
@@ -73,6 +73,26 @@ Whole-Tree Search is built with strict privacy and security principles:
 4. Press `Enter` to navigate to the matched line in the note, or `Cmd/Ctrl + Enter` to open in a new tab.
 
 *(Tip: Assign a custom hotkey to `Open whole-tree search` in **Settings > Hotkeys** for quick access).*
+
+---
+
+## Settings
+
+Open **Settings > Community plugins > Whole-Tree Search** to configure:
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| **Maximum results** | 50 | Stop searching once this many matches are found. |
+| **Minimum query length** | 1 | Characters to type before searching starts. |
+| **Case sensitive** | Off | Match the exact capitalization of the query. |
+| **Ignore frontmatter** | Off | Skip matches inside YAML frontmatter. |
+| **Excluded folders** | — | Folders (one per line) whose notes are never searched, including subfolders. |
+| **Ancestor levels** | 1 | Parent levels shown above the match (0 = none, 1 = immediate parent, higher = full path). |
+| **Show nested children** | On | Include items nested beneath the match. |
+| **Maximum child depth** | 0 | Levels of children to show (0 = all). |
+| **Blank lines end a block** | On | Treat empty lines as the end of an outline; turn off for lists with blank lines between items. |
+| **Tab width** | 4 | Spaces a tab counts as when comparing mixed tab/space indentation. |
+| **Open in new tab by default** | Off | Swap `Enter` and `Mod + Enter` so results open in a new tab by default. |
 
 ---
 

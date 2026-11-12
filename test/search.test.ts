@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import {
 	extractWholeTreeBlock,
+	getFrontmatterEndIndex,
 	getIndentationLevel,
 	searchContentForWholeTree,
 } from "../src/parser";
@@ -98,5 +99,82 @@ assert.strictEqual(extractWholeTreeBlock(["- single line"], -1), "");
 assert.strictEqual(extractWholeTreeBlock(["- single line"], 5), "");
 assert.strictEqual(searchContentForWholeTree("", "test").length, 0);
 assert.strictEqual(searchContentForWholeTree("line 1\nline 2", "   ").length, 0);
+
+// Test 5: Configurable tab width
+assert.strictEqual(getIndentationLevel("\t- One tab", 2), 2);
+assert.strictEqual(getIndentationLevel("\t  - Tab + two spaces", 2), 4);
+
+// Test 6: Ancestor levels
+// Line 3 ("Users table") with 2 ancestor levels -> "Milestone 1", "Define database schema"
+assert.strictEqual(
+	extractWholeTreeBlock(lines, 3, { ancestorLevels: 2 }),
+	[
+		"  - **Milestone 1**: Architecture & Design",
+		"    - Define database schema",
+		"      - Users table",
+	].join("\n")
+);
+// All ancestors up to the root
+assert.strictEqual(
+	extractWholeTreeBlock(lines, 3, { ancestorLevels: 10 }),
+	[
+		"- Project Alpha",
+		"  - **Milestone 1**: Architecture & Design",
+		"    - Define database schema",
+		"      - Users table",
+	].join("\n")
+);
+// No ancestors
+assert.strictEqual(
+	extractWholeTreeBlock(lines, 2, { ancestorLevels: 0, includeChildren: false }),
+	"    - Define database schema"
+);
+
+// Test 7: Child depth limit
+assert.strictEqual(
+	extractWholeTreeBlock(lines, 1, { maxChildDepth: 1 }),
+	[
+		"- Project Alpha",
+		"  - **Milestone 1**: Architecture & Design",
+		"    - Define database schema",
+		"    - Draft API specification",
+	].join("\n")
+);
+assert.strictEqual(
+	extractWholeTreeBlock(lines, 0, { includeChildren: false }),
+	"- Project Alpha"
+);
+
+// Test 8: Blank lines inside an outline
+const spacedMarkdown = ["- Parent", "", "  - Child A", "", "  - Child B", "- Next root"];
+assert.strictEqual(extractWholeTreeBlock(spacedMarkdown, 0), "- Parent");
+assert.strictEqual(
+	extractWholeTreeBlock(spacedMarkdown, 0, { stopAtBlankLines: false }),
+	["- Parent", "  - Child A", "  - Child B"].join("\n")
+);
+assert.strictEqual(
+	extractWholeTreeBlock(spacedMarkdown, 4, { stopAtBlankLines: false }),
+	["- Parent", "  - Child B"].join("\n")
+);
+assert.strictEqual(extractWholeTreeBlock(spacedMarkdown, 4), "  - Child B");
+
+// Test 9: Case sensitivity
+assert.strictEqual(searchContentForWholeTree("- Alpha\n- alpha", "Alpha").length, 2);
+assert.strictEqual(
+	searchContentForWholeTree("- Alpha\n- alpha", "Alpha", "", "", { caseSensitive: true }).length,
+	1
+);
+
+// Test 10: Frontmatter skipping
+const fmMarkdown = ["---", "tags: alpha", "---", "- alpha item"].join("\n");
+assert.strictEqual(getFrontmatterEndIndex(fmMarkdown.split("\n")), 3);
+assert.strictEqual(getFrontmatterEndIndex(["- no frontmatter"]), 0);
+assert.strictEqual(searchContentForWholeTree(fmMarkdown, "alpha").length, 2);
+const fmResults = searchContentForWholeTree(fmMarkdown, "alpha", "", "", { skipFrontmatter: true });
+assert.strictEqual(fmResults.length, 1);
+assert.strictEqual(fmResults[0].matchedLineIndex, 3);
+
+// Test 11: Result limit
+assert.strictEqual(searchContentForWholeTree("- a\n- a\n- a", "a", "", "", { limit: 2 }).length, 2);
 
 console.log("All Whole-Tree Search tests passed!");
