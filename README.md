@@ -78,7 +78,7 @@ Whole-Tree Search is built with strict privacy and security principles:
 
 ## Settings
 
-Open **Settings > Community plugins > Whole-Tree Search** to configure:
+Open **Settings > Community plugins > Whole-Tree Search** to configure the options below. On Obsidian 1.13+ every setting is also discoverable through the settings search.
 
 | Setting | Default | Description |
 | --- | --- | --- |
