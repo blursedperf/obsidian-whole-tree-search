@@ -43,6 +43,8 @@ When searching through outlines, nested task lists, or meeting notes in Obsidian
 Whole-Tree Search is built with strict privacy and security principles:
 
 - **Zero Network Calls**: The plugin makes no network calls, HTTP requests, WebSockets, or remote telemetry pings.
+- **Offline audit**: Every test run checks the source, built bundle and styles with `scripts/offline-audit.mjs`, which fails on any network API (`fetch`, `XMLHttpRequest`, WebSocket, `requestUrl`, workers, dynamic `import()`, ...), dynamic code (`eval`, `new Function`), raw HTML injection, or remote CSS (`@import`, non-`data:` `url()`).
+- **Remote content is never loaded**: Before a result is rendered, remote images (`![](https://...)`), raw HTML that loads resources (`<img>`, `<iframe>`, `<video>`, ...) and embeds of other notes are neutralised, so searching never makes a network request. Embeds of local images, audio, video and PDFs still show.
 - **Confined to Local Vault**: The plugin reads Markdown files within your vault using Obsidian's official `app.vault` API and does not touch files outside your vault.
 - **Safe DOM Rendering**: All user interface elements are rendered using Obsidian's official DOM creation and `MarkdownRenderer.render` APIs. No raw HTML strings or `eval` statements are used.
 - **No Memory Leaks**: Suggestion components adhere to Obsidian's `Component` lifecycle management, properly loading and unloading DOM listeners between keystrokes and modal sessions.

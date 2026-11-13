@@ -8,6 +8,12 @@ import {
 	TFile,
 } from "obsidian";
 import { searchContentForWholeTree, WholeTreeMatch } from "./parser";
+import { makeOfflineMarkdown } from "./offline";
+
+/** Wait this long after the last keystroke before reading the vault. */
+const SEARCH_DELAY_MS = 150;
+
+const delay = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 import {
 	DEFAULT_SETTINGS,
 	isPathExcluded,
@@ -59,6 +65,12 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 		const settings = this.settings;
 		const trimmedQuery = query.trim();
 		if (trimmedQuery.length < Math.max(1, settings.minQueryLength)) {
+			return [];
+		}
+
+		// Search once typing pauses instead of reading the whole vault on every keystroke
+		await delay(SEARCH_DELAY_MS);
+		if (this.currentQuery !== query) {
 			return [];
 		}
 
@@ -120,7 +132,7 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 		const contentEl = el.createDiv({ cls: "whole-tree-search-content" });
 		void MarkdownRenderer.render(
 			this.app,
-			suggestion.block,
+			makeOfflineMarkdown(suggestion.block),
 			contentEl,
 			suggestion.file.path,
 			this.renderComponent

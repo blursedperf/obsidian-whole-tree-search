@@ -5,6 +5,7 @@ import {
 	getIndentationLevel,
 	searchContentForWholeTree,
 } from "../src/parser";
+import { makeOfflineMarkdown } from "../src/offline";
 
 // Test 1: Indentation level tracking with spaces and tabs
 assert.strictEqual(getIndentationLevel("- Root item"), 0);
@@ -176,5 +177,24 @@ assert.strictEqual(fmResults[0].matchedLineIndex, 3);
 
 // Test 11: Result limit
 assert.strictEqual(searchContentForWholeTree("- a\n- a\n- a", "a", "", "", { limit: 2 }).length, 2);
+
+// Rendered results never load remote content
+{
+	const out = makeOfflineMarkdown(
+		[
+			"- ![logo](https://example.com/a.png) and ![[Embedded note]]",
+			"  - ![[diagram.png]] <img src=\"https://x/y.png\"> <iframe src=\"https://yt\"></iframe>",
+			"  - `![code](https://x.png)` [a link](https://example.com)",
+		].join("\n")
+	);
+	assert.strictEqual(
+		out,
+		[
+			"- *(remote image not loaded: logo)* and [[Embedded note]]",
+			"  - ![[diagram.png]] &lt;img src=\"https://x/y.png\"> &lt;iframe src=\"https://yt\">&lt;/iframe>",
+			"  - `![code](https://x.png)` [a link](https://example.com)",
+		].join("\n")
+	);
+}
 
 console.log("All Whole-Tree Search tests passed!");
