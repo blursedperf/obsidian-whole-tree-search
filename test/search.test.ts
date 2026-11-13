@@ -4,6 +4,7 @@ import {
 	getFrontmatterEndIndex,
 	getIndentationLevel,
 	searchContentForWholeTree,
+	dedentBlock,
 } from "../src/parser";
 import { makeOfflineMarkdown } from "../src/offline";
 
@@ -196,5 +197,11 @@ assert.strictEqual(searchContentForWholeTree("- a\n- a\n- a", "a", "", "", { lim
 		].join("\n")
 	);
 }
+
+// Results are dedented so nested matches render as lists, not code blocks
+assert.strictEqual(dedentBlock("\t- Negligence\n\t\t- Duty of care"), "- Negligence\n\t- Duty of care");
+assert.strictEqual(dedentBlock("    - a\n\n      - b"), "- a\n\n  - b");
+assert.strictEqual(dedentBlock("- top\n\t- child"), "- top\n\t- child");
+assert.strictEqual(dedentBlock("\t- tab\n    - spaces"), "\t- tab\n    - spaces");
 
 console.log("All Whole-Tree Search tests passed!");

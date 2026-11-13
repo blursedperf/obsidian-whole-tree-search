@@ -193,3 +193,28 @@ export function searchContentForWholeTree(
 
 	return results;
 }
+
+/**
+ * Removes the indentation every line of a block shares, keeping its relative nesting. Matches inside a
+ * nested outline keep their source indentation, and Markdown renders four or more leading spaces (or a
+ * tab) as a code block, so an indented result showed as code instead of a list.
+ */
+export function dedentBlock(block: string): string {
+	const lines = block.split("\n");
+	let common: string | null = null;
+	for (const line of lines) {
+		if (line.trim() === "") continue;
+		const indent = line.match(/^[ \t]*/)?.[0] ?? "";
+		if (common === null) {
+			common = indent;
+			continue;
+		}
+		let i = 0;
+		while (i < common.length && i < indent.length && common[i] === indent[i]) i++;
+		common = common.slice(0, i);
+		if (common === "") break;
+	}
+	if (!common) return block;
+	const cut = common.length;
+	return lines.map((line) => (line.trim() === "" ? line : line.slice(cut))).join("\n");
+}

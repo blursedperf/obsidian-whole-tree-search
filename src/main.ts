@@ -7,7 +7,7 @@ import {
 	SuggestModal,
 	TFile,
 } from "obsidian";
-import { searchContentForWholeTree, WholeTreeMatch } from "./parser";
+import { dedentBlock, searchContentForWholeTree, WholeTreeMatch } from "./parser";
 import { makeOfflineMarkdown } from "./offline";
 
 /** Wait this long after the last keystroke before reading the vault. */
@@ -132,7 +132,7 @@ export class WholeTreeSearchModal extends SuggestModal<VaultTreeSuggestion> {
 		const contentEl = el.createDiv({ cls: "whole-tree-search-content" });
 		void MarkdownRenderer.render(
 			this.app,
-			makeOfflineMarkdown(suggestion.block),
+			makeOfflineMarkdown(dedentBlock(suggestion.block)),
 			contentEl,
 			suggestion.file.path,
 			this.renderComponent
