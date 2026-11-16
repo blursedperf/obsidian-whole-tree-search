@@ -22,8 +22,12 @@
 	color: var(--text-faint);
 }
 
+/* Suggestion rows keep whitespace (pre-wrap); rendered Markdown has newlines between its tags, which
+   would show as blank lines inside nested lists. */
 .whole-tree-search-content {
 	font-size: var(--font-ui-small);
+	line-height: var(--line-height-tight, 1.3);
+	white-space: normal;
 	overflow-x: auto;
 }
 
@@ -32,4 +36,27 @@
 .whole-tree-search-content p {
 	margin-top: 2px;
 	margin-bottom: 2px;
+}
+
+.whole-tree-search-content ul,
+.whole-tree-search-content ol {
+	padding-inline-start: 1.5em;
+}
+
+.whole-tree-search-content li + li,
+.whole-tree-search-content li > ul,
+.whole-tree-search-content li > ol {
+	margin-top: 2px;
+}
+
+.whole-tree-search-content > :first-child {
+	margin-top: 0;
+}
+
+.whole-tree-search-content > :last-child {
+	margin-bottom: 0;
+}
+
+.whole-tree-search-suggestion:last-child {
+	border-bottom: none;
 }
